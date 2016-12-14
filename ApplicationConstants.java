@@ -6,17 +6,10 @@ public interface ApplicationConstants {
 
 	int WINDOW_WIDTH = 500, WINDOW_HEIGHT = 500;
 	
-	//	world that gets mapped into the window
-	float WORLD_X_MIN = -10;
-	float WORLD_X_MAX = 70; 
-	float WORLD_Y_MIN = 0;
-	float WORLD_Y_MAX = 60;
+	float WORLD_UNIT = 3.33f;
 	
-	float WORLD_CENTER_X = (WORLD_X_MIN + WORLD_X_MAX)/2;
-	float WORLD_CENTER_Y = (WORLD_Y_MIN + WORLD_Y_MAX)/2;
-	
-	float WORLD_WIDTH = WORLD_X_MAX - WORLD_X_MIN;
-	float WORLD_HEIGHT = WORLD_Y_MAX - WORLD_Y_MIN;
+	float WORLD_WIDTH = WINDOW_WIDTH/WORLD_UNIT;
+	float WORLD_HEIGHT = WINDOW_WIDTH * WORLD_UNIT;
 	
 	//	Here, I hope that whoever picked the world and window dimensions 
 	//	managed to select values that give the same scaling horizontally 
@@ -24,10 +17,5 @@ public interface ApplicationConstants {
 	//	bad effect on rotation (results in skewing). 
 	float WORLD_TO_PIXEL_SCALE = WINDOW_WIDTH / WORLD_WIDTH;
 	float PIXEL_WORLD_SCALE = 1 / WORLD_TO_PIXEL_SCALE;
-	
-	//	This gives the location of the world's origin in the window,
-	//	in pixel coordinates.  Note that this point could well be 
-	//	outside of the window.
-	float ORIGIN_X = -WORLD_TO_PIXEL_SCALE*WORLD_X_MIN;
-	float ORIGIN_Y = WORLD_TO_PIXEL_SCALE*WORLD_Y_MAX;
+
 }

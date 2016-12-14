@@ -28,8 +28,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		_backgroundImage=loadImage("low_res_gravel.png");
 		earthImage = loadImage("earthTexture.jpg");
 		
-		hMapRows = 15;
-		hMapCols = 15;
+		hMapRows = 30;
+		hMapCols = 30;
 		
 		heightMap = new float[hMapCols][hMapRows];
 		
@@ -45,18 +45,10 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	/** A function of x and y that gives us the z value for our heightMap*/
 	private float zFunction(int x, int y){
-		return (float)(x*y);
+		return (float)(x+y);
 	}
 	
 	public void draw() {
-
-		//Background world setup - etc
-		background(100);
-		drawHeightMap();
-		ball.draw();
-	}
-	
-	private void drawHeightMap(){
 //		pushMatrix();
 //		
 //		// translate to the origin
@@ -64,6 +56,13 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 //		
 //		// change to world coordinates with y pointing up
 //		scale(WORLD_TO_PIXEL_SCALE, -WORLD_TO_PIXEL_SCALE);
+		//Background world setup - etc
+		background(100);
+		drawHeightMap();
+		ball.draw();
+	}
+	
+	private void drawHeightMap(){
 		
 		texture(_backgroundImage);
 		
@@ -78,14 +77,14 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 
 				vertex(j*width/num_col,
 						i*height/num_rows,
-						heightMap[j][i],
+						heightMap[j][i]*WORLD_UNIT,
 						(float)j/(float)num_col,
 						(float)i/(float)num_rows);
 				
 				
 				vertex(j*width/num_col,
 						(i+1)*height/num_rows,
-						heightMap[j][i+1],
+						heightMap[j][i+1]*WORLD_UNIT,
 						(float)(j)/(float)num_col,
 						(float)(i+1)/(float)num_rows);
 
@@ -105,7 +104,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	public void keyReleased(){
 		
 		if (key=='1'){
-			camera(width/2.0f, height/2.0f, (height/2.0f) / tan(PI*30.0f / 180.0f), width/2.0f, height/2.0f, 0, 0, 1, 0); 
+			camera(width/2.0f, height/2.0f, (height/2.0f) / tan(PI*30.0f / 180.0f), width/2.0f, height/2.0f, 0, 0, 1, 0);
 			
 		} else if (key=='2'){
 			camera(width/2.0f, height/1.0f, (height/1.5f) / tan(PI*30.0f / 180.0f), width/2.0f, height/2.0f, 0, 0, 1, 0);
