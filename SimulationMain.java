@@ -57,7 +57,11 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		surface = createSurface();
 		
 		//Initialize ball
-		//ball = new Ball(this,earthImage,250,250,100,50);
+		int ball_x = 0,
+				ball_y = 0;
+		float ball_z = surface[ball_x+WORLD_WIDTH/2][ball_y+WORLD_HEIGHT/2];
+		ball = new Ball(this,earthImage,ball_x,ball_y,
+				ball_z,5);
 	}
 	
 	/** A function of x and y that gives us the z value for our heightMap*/
@@ -65,7 +69,30 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		float xf = ((sq(x)*x) - (3*x));
 		float yf = ((sq(y)*y) - (3*y));
 
-		return (float)(xf+yf);			
+		return (float)(xf+yf);	
+	}
+	
+	private float gradient(){
+		float[] coords = ball.getCoords();
+		// normal vector = 1st deriv of zFunction
+		
+		// partial deriv of our zFunction respect to x
+		// plug in x location of ball
+		
+		// partial deriv of our zFunction respect to y
+		// plug in y location of ball
+		
+		// just set z to z value stored in heightmap
+		//System.out.println(coords[0] + ", " + coords[1] + ", " + coords[2]);
+		int x = (int) (coords[0]+WORLD_WIDTH/2), y = (int) (coords[1]+WORLD_HEIGHT/2);
+		ball.update();
+		if(x <= WORLD_WIDTH &&
+				y  <= WORLD_HEIGHT && 
+				x >= 0 && y >= 0) {
+			ball.setZ(surface[x][y]);
+		}
+		
+		return 0;
 	}
 	
 	public void draw() {
@@ -93,6 +120,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//--------WORLD--------//
 		pushMatrix();
 		moveToWorldUnits();
+		pushMatrix();
 		//------------------//
 		
 		//---------SURFACE------------//
@@ -107,6 +135,10 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		drawRef();	
 		//--------------------------------------//
 		
+		popMatrix();
+		gradient();
+//		ball.update();
+		ball.draw();
 		popMatrix();
 	}
 	
@@ -192,6 +224,15 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			
 			zRotMod = 0;
 			xRotMod = 0;
+			break;
+		case ' ':
+			ball.accelerate(0.7f);
+			break;
+		case '[':
+			ball.rotate(0.2f);
+			break;
+		case ']':
+			ball.rotate(-0.2f);
 			break;
 		}
 	}
