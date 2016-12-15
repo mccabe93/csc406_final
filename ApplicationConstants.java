@@ -14,21 +14,20 @@ public interface ApplicationConstants {
 
 	int WINDOW_WIDTH = 1280, WINDOW_HEIGHT = 720,
 			WINDOW_DEPTH = (WINDOW_WIDTH + WINDOW_HEIGHT)/4;
-		
-	//x-> cols ..... y-> rows ....z -> hard-coded
-	int DELTA_X = 20, DELTA_Y = 20, Z_RATIO = (DELTA_X+DELTA_Y);
 	
+	//the numbers in world x max, world y max, world z max are the number of tiles
+	//hence, a 80 by 80 by 80 world has a 2d surface array of size 79 by 79
 	float WORLD_X_MIN = 0;
-	float WORLD_X_MAX = 40; 
+	float WORLD_X_MAX = 160; 
 	float WORLD_Y_MIN = 0;
-	float WORLD_Y_MAX = 40;
+	float WORLD_Y_MAX = 160;
 	float WORLD_Z_MIN = 0;
-	float WORLD_Z_MAX = 40;
+	float WORLD_Z_MAX = 160;
 	
 	//All same, our world is cubed
-	float WORLD_WIDTH = WORLD_X_MAX - WORLD_X_MIN;
-	float WORLD_HEIGHT = WORLD_Y_MAX - WORLD_Y_MIN;
-	float WORLD_DEPTH = WORLD_Z_MAX - WORLD_Z_MIN;
+	int WORLD_WIDTH = (int) (WORLD_X_MAX - WORLD_X_MIN);
+	int WORLD_HEIGHT = (int) (WORLD_Y_MAX - WORLD_Y_MIN);
+	int WORLD_DEPTH = (int) (WORLD_Z_MAX - WORLD_Z_MIN);
 	
 	float WORLD_CENTER_X = (WORLD_X_MIN + WORLD_X_MAX)/2;
 	float WORLD_CENTER_Y = (WORLD_Y_MIN + WORLD_Y_MAX)/2;

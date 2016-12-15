@@ -7,12 +7,6 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	private static final long serialVersionUID = 1L;
 	
 	private PImage backgroundImage, earthImage;
-	
-	//define our height map as 2d array
-	private float[][] heightMap;
-	//hMapRows and hMapCols specifies the number of rows and columns
-	private int hMapCols = DELTA_X;
-	private int hMapRows = DELTA_Y;
 		
 	private float fov, cameraZ;
 	private float perspectiveX,perspectiveY;
@@ -24,6 +18,9 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	//such that a mouse drag from left to right would be two full rotations
 	private float piScaler;
 	
+	private float maxZ;
+	
+	private float[][] surface;
 	private Ball ball;
 	
 	public void settings() {
@@ -54,13 +51,10 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		perspectiveX = width/2;
 		perspectiveY = height/2;
 		
-		heightMap = new float[hMapCols][hMapRows];
+		maxZ = 0;
 		
-		for (int i = 0; i < hMapRows; i++){
-			for (int j = 0; j < hMapCols; j++){
-				heightMap[j][i] = zFunction(j,i);
-			}
-		}
+		surface = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
+		surface = createSurface();
 		
 		//Initialize ball
 		//ball = new Ball(this,earthImage,250,250,100,50);
@@ -70,7 +64,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	private float zFunction(int x, int y){
 		float xf = ((sq(x)*x) - (3*x));
 		float yf = ((sq(y)*y) - (3*y));
-		return (float)(xf+yf);
+
+		return (float)(xf+yf);			
 	}
 	
 	public void draw() {
@@ -103,7 +98,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//---------SURFACE------------//
 		pushMatrix();
 		strokeWeight(.1f);
-		drawHeightMap();
+		drawSurface();
 		popMatrix();
 		//-----------------------//
 		
@@ -139,30 +134,47 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		line(0,0,-2,0,0,6);
 	}
 	
-	private void drawHeightMap(){
+	private float[][] createSurface(){
+		float z = 0;
+		//rows
+		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){
+			//cols
+			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2);j++){
+				z = zFunction(j,i);
+				if(abs(z) > WORLD_Z_MAX/2){
+					maxZ = abs(z);
+				}else if(z < 0){
+					maxZ = abs(z);
+				}
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = zFunction(j,i);
+			}
+		}
+		//scales all values down..without it, the surface would be huge for exponential functions
+		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){			
+			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2);j++){
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_HEIGHT/maxZ;
+			}
+		}
+		return surface;
+	}
+	
+	private void drawSurface(){
 		texture(backgroundImage);
 		
-		int num_rows = hMapRows;
-		int num_col = hMapCols;
-		
-		for (int i=-num_col;i<num_rows;i++){
+		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){
 
 			beginShape(QUAD_STRIP);
 			texture(backgroundImage);
-			for (int j=-num_col;j<num_col+1;j++){
+			
+			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2)+1;j++){
 
-				vertex(j,
-						i,
-						zFunction(j,i)/Z_RATIO,
-						(float)j/(float)2*num_col,
-						(float)i/(float)2*num_rows);
-				
-				
-				vertex(j,
-						(i+1),
-						zFunction(j,i+1)/Z_RATIO,
-						(float)(j)/(float)2*num_col,
-						(float)(i+1)/(float)2*num_rows);
+				vertex(j,i,surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2],
+						(float)j/(float)WORLD_WIDTH,
+						(float)i/(float)WORLD_HEIGHT);
+							
+				vertex(j,i+1,surface[j+WORLD_HEIGHT/2][i+1+WORLD_WIDTH/2],
+						(float)(j)/(float)WORLD_WIDTH,
+						(float)(i+1)/(float)WORLD_HEIGHT);
 
 			}
 			endShape(CLOSE);   
