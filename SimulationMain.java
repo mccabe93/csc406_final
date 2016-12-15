@@ -77,14 +77,14 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 
 				vertex(j*width/num_col,
 						i*height/num_rows,
-						heightMap[j][i]*WORLD_UNIT,
+						heightMap[j][i],
 						(float)j/(float)num_col,
 						(float)i/(float)num_rows);
 				
 				
 				vertex(j*width/num_col,
 						(i+1)*height/num_rows,
-						heightMap[j][i+1]*WORLD_UNIT,
+						heightMap[j][i+1],
 						(float)(j)/(float)num_col,
 						(float)(i+1)/(float)num_rows);
 
