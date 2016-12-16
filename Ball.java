@@ -1,4 +1,5 @@
 import processing.core.PApplet;
+import processing.core.PConstants;
 import processing.core.PImage;
 import processing.core.PShape;
 
@@ -26,7 +27,7 @@ public class Ball {
 		
 		refApplet = inApplet;
 		acceleration = 0f;
-		ball = refApplet.createShape(refApplet.SPHERE, radius);
+		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
 		ball.setTexture(mySkin);
 	}
 	
@@ -62,8 +63,8 @@ public class Ball {
 
 //		refApplet.rotateZ(angle_planar);
 //		refApplet.rotateY(angle_rotational);
-		refApplet.translate(x,y,z+radius);
-//		refApplet.noStroke();
+		refApplet.translate(x,y,z);
+		refApplet.noStroke();
 //		refApplet.sphere(radius);
 		refApplet.shape(ball);
 		refApplet.line(0, 0, 0, 

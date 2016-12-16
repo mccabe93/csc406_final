@@ -21,6 +21,9 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	private float maxZ;
 	
 	private float[][] surface;
+	private float[][] partialXs;
+	private float[][] partialYs;
+	
 	private Ball ball;
 	
 	public void settings() {
@@ -54,12 +57,15 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		maxZ = 0;
 		
 		surface = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
+		partialXs = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
+		partialYs = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
+		
 		surface = createSurface();
 		
 		//Initialize ball
-		int ball_x = 0,
-				ball_y = 0;
-		float ball_z = surface[ball_x+WORLD_WIDTH/2][ball_y+WORLD_HEIGHT/2];
+		float ball_x = 20 - (5*partialXs[40][40]);
+		float ball_y = 20 - (5*partialYs[40][40]);
+		float ball_z = surface[40][40]+.6f;
 		ball = new Ball(this,earthImage,ball_x,ball_y,
 				ball_z,5);
 	}
@@ -71,19 +77,27 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 
 		return (float)(xf+yf);	
 	}
+	private float partialX(float x, float y){
+		float dx = ((3*sq(x)) - 3);
+		return dx;
+	}
+	
+	private float partialY(float x, float y){
+		float dy = ((3*sq(y)) - 3);
+		return dy;
+	}
+	
+	private float unitNormalX(float x, float y){
+		return partialX(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
+	}
+	
+	private float unitNormalY(float x, float y){
+		return partialY(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
+	}
 	
 	private float gradient(){
 		float[] coords = ball.getCoords();
-		// normal vector = 1st deriv of zFunction
-		
-		// partial deriv of our zFunction respect to x
-		// plug in x location of ball
-		
-		// partial deriv of our zFunction respect to y
-		// plug in y location of ball
-		
-		// just set z to z value stored in heightmap
-		//System.out.println(coords[0] + ", " + coords[1] + ", " + coords[2]);
+
 		int x = (int) (coords[0]+WORLD_WIDTH/2), y = (int) (coords[1]+WORLD_HEIGHT/2);
 		ball.update();
 		if(x <= WORLD_WIDTH &&
@@ -93,6 +107,35 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		}
 		
 		return 0;
+	}
+	
+	private float[][] createSurface(){
+		float z = 0;
+		//rows
+		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){
+			//cols
+			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
+				z = zFunction(j,i);
+				if(abs(z) > WORLD_Z_MAX){
+					maxZ = abs(z);
+				}else if(z < 0){
+					maxZ = abs(z);
+				}
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = zFunction(j,i);
+			}
+		}
+		//scales all values down..without it, the surface would be huge for exponential functions
+		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){			
+			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_HEIGHT/maxZ;
+				//also calculates partial derivatives and stores them
+				//as unit values
+				partialXs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = unitNormalX(j,i);
+				partialYs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = unitNormalY(j,i);
+			}
+		}
+		
+		return surface;
 	}
 	
 	public void draw() {
@@ -127,17 +170,19 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		pushMatrix();
 		strokeWeight(.1f);
 		drawSurface();
+		drawNormVectors();
 		popMatrix();
 		//-----------------------//
 		
 		//--------WORLD BOX & CENTER REFERENCES--------//
 		drawBoxRef();
-		drawRef();	
+		drawRef();
 		//--------------------------------------//
 		
 		popMatrix();
-		gradient();
+		//gradient();
 //		ball.update();
+		noStroke();
 		ball.draw();
 		popMatrix();
 	}
@@ -166,39 +211,29 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		line(0,0,-2,0,0,6);
 	}
 	
-	private float[][] createSurface(){
-		float z = 0;
+	private void drawNormVectors(){
+		stroke(0);
 		//rows
-		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){
+		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){
 			//cols
-			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2);j++){
-				z = zFunction(j,i);
-				if(abs(z) > WORLD_Z_MAX/2){
-					maxZ = abs(z);
-				}else if(z < 0){
-					maxZ = abs(z);
-				}
-				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = zFunction(j,i);
+			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
+				line(j,i,surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2],
+						j-partialXs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2],
+						i-partialYs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2],
+						surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2]+1);
 			}
 		}
-		//scales all values down..without it, the surface would be huge for exponential functions
-		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){			
-			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2);j++){
-				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_HEIGHT/maxZ;
-			}
-		}
-		return surface;
 	}
 	
 	private void drawSurface(){
 		texture(backgroundImage);
 		
-		for (int i=-(WORLD_HEIGHT/2);i<(WORLD_HEIGHT/2);i++){
+		for (int i=-(WORLD_HEIGHT/2);i<=(WORLD_HEIGHT/2)-1;i++){
 
 			beginShape(QUAD_STRIP);
 			texture(backgroundImage);
 			
-			for (int j=-(WORLD_WIDTH/2);j<(WORLD_WIDTH/2)+1;j++){
+			for (int j=-(WORLD_WIDTH/2);j<=(WORLD_WIDTH/2);j++){
 
 				vertex(j,i,surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2],
 						(float)j/(float)WORLD_WIDTH,

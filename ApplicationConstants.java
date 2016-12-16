@@ -1,28 +1,25 @@
 
-/** For our application constants we will initialize window size and various constants relating
- * to our world and how we handle our perspective. Our world will be defined as a (toggleably) visible
- * cube. We will say that this cube is 2 meters cubed. We will translate to the center of this cube
- * when drawing in our world.
+/** Our world is bounded by the window width and height. The z values,depth, are scaled
+ * to fit within the default perspective. The world is cubic and increasing the values of
+ * the world xmin,xmax,ymin,etc. increases the detail of the world by increasing grid
+ * density in SimulationMain.java
  * 
- * Note that there are 3 different scaling factors (x,y,z)
- * the max z is average of max x and y
- * 1 meter = 
  * @author Cameron
  *
  */
 public interface ApplicationConstants {
 
-	int WINDOW_WIDTH = 1280, WINDOW_HEIGHT = 720,
-			WINDOW_DEPTH = (WINDOW_WIDTH + WINDOW_HEIGHT)/4;
+	int WINDOW_WIDTH = 600, WINDOW_HEIGHT = 600,
+			WINDOW_DEPTH = (WINDOW_WIDTH + WINDOW_HEIGHT)/2;
 	
 	//the numbers in world x max, world y max, world z max are the number of tiles
 	//hence, a 80 by 80 by 80 world has a 2d surface array of size 79 by 79
-	float WORLD_X_MIN = 0;
-	float WORLD_X_MAX = 160; 
-	float WORLD_Y_MIN = 0;
-	float WORLD_Y_MAX = 160;
-	float WORLD_Z_MIN = 0;
-	float WORLD_Z_MAX = 160;
+	int WORLD_X_MIN = -20;
+	int WORLD_X_MAX = 20; 
+	int WORLD_Y_MIN = -20;
+	int WORLD_Y_MAX = 20;
+	int WORLD_Z_MIN = -20;
+	int WORLD_Z_MAX = 20;
 	
 	//All same, our world is cubed
 	int WORLD_WIDTH = (int) (WORLD_X_MAX - WORLD_X_MIN);
