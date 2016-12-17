@@ -2,8 +2,15 @@ import processing.core.PApplet;
 import processing.core.PImage;
 import processing.event.MouseEvent;
 
+/** Simulation Main is our main class in our program and it is where we initially extend 
+ * PApplet and implement our ApplicationConstants. In SimulationMain we define a perspective,
+ * as well as some controls for that perspective. We also initialize our surface and ball.
+ * Simulation Main contains multiple helper methods for calculating partial derivatives and 
+ * normal vectors. There also multiple helper draw methods for showing references of dimensions
+ * and orientation.*/
 public class SimulationMain extends PApplet implements ApplicationConstants
 {
+	/** Defining our variables */
 	private static final long serialVersionUID = 1L;
 	
 	private PImage backgroundImage, earthImage;
@@ -13,6 +20,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	//user perspective controls for rotation - i.e. the modifier to default rotation
 	private float zRotMod,xRotMod;
+	
 	//and this is for controlling the user rotation.
 	//this value basically calls the width/height of the window 2PI
 	//such that a mouse drag from left to right would be two full rotations
@@ -20,12 +28,15 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	private float maxZ;
 	
+	//Define our surface, partial derivatives for each point, and our ball
 	private float[][] surface;
 	private float[][] partialXs;
 	private float[][] partialYs;
 	
 	private Ball ball;
 	
+	/** Standard settings method for processing file. Also, initialize piScaler, because
+	 * it is based on the width and height of the window.*/
 	public void settings() {
 		width = WINDOW_WIDTH;
 		height = WINDOW_HEIGHT;
@@ -36,7 +47,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		size(width,height,P3D);
 		
 	}
-	
+	/** Our setup method initializes textures, perspective tools, the surface,
+	 * partial derivatives, and the ball. */
 	public void setup() {
 		
 		textureMode(NORMAL);
@@ -62,7 +74,9 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		
 		surface = createSurface();
 		
-		//Initialize ball
+		//Initialize ball..currently this is hardcoded to place ball at 20,20
+		//which is currently the last point we calculate for our surface. It also attempts
+		//to use the normal vector at that point to place the ball exactly on the surface.
 		float ball_x = 20 - (5*partialXs[40][40]);
 		float ball_y = 20 - (5*partialYs[40][40]);
 		float ball_z = surface[40][40]+.6f;
@@ -77,24 +91,28 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 
 		return (float)(xf+yf);	
 	}
+	/** Calculates dx, the partial derivative of x for the zFunction */
 	private float partialX(float x, float y){
 		float dx = ((3*sq(x)) - 3);
 		return dx;
 	}
-	
+	/** Calculates dy, the partial derivative of y for the zFunction */
 	private float partialY(float x, float y){
 		float dy = ((3*sq(y)) - 3);
 		return dy;
 	}
-	
+	/** Calculates the partialX as a unit value by dividing by the squares of
+	 * the partialX and partialY at a specific point */
 	private float unitNormalX(float x, float y){
 		return partialX(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
 	}
-	
+	/** Calculates the partialY as a unit value by dividing by the squares of
+	 * the partialX and partialY at a specific point */
 	private float unitNormalY(float x, float y){
 		return partialY(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
 	}
 	
+	/** Possible helper method..not currently being used */
 	private float gradient(){
 		float[] coords = ball.getCoords();
 
@@ -108,7 +126,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		
 		return 0;
 	}
-	
+	/** Creates the surface in pixel units and determines if the z values produced by the
+	 * zFunction need to be scaled down to fit within our 'world' box*/
 	private float[][] createSurface(){
 		float z = 0;
 		//rows
@@ -138,6 +157,9 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		return surface;
 	}
 	
+	/** Our draw function first moves to the perspective that we are in and then moves
+	 * to world units to draw the surface, ball, and any helper drawings such as the normal
+	 * vectors, the world box, and any reference drawings. */
 	public void draw() {
 		//first we clear background
 		background(100);
@@ -186,18 +208,21 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		ball.draw();
 		popMatrix();
 	}
-	
+	/** Moves into world units by scaling by all the world to pixel values defined in
+	 * ApplicationConstants*/
 	private void moveToWorldUnits(){
 		//scale to world units
 		scale(WORLD_TO_PIXEL_X, WORLD_TO_PIXEL_Y,WORLD_TO_PIXEL_Z);
 	}
 	
+	/** Draws the box of the world that we want our surface to fit within*/
 	private void drawBoxRef(){
 		//fill(0);
 		box(WORLD_HEIGHT,WORLD_WIDTH,WORLD_DEPTH);
 		//noFill();
 	}
 	
+	/** Draws the x,y,z axises */
 	private void drawRef(){
 //		draws reference axises
 		//red is x axis
@@ -211,6 +236,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		line(0,0,-2,0,0,6);
 	}
 	
+	/** Draws the unit normal vector at all points in the surface */
 	private void drawNormVectors(){
 		stroke(0);
 		//rows
@@ -224,7 +250,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			}
 		}
 	}
-	
+	/** Draws the surface as a quad strip, referencing the 2d array surface for the z values */
 	private void drawSurface(){
 		texture(backgroundImage);
 		
@@ -249,7 +275,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		}
 	}
 	
-	
+	/** Various tools for the perspective and some beginner controls for ball movement */
 	public void keyPressed() {
 		switch(key){
 		//reset perspective
@@ -272,7 +298,9 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		}
 	}
 	
-	//mouse wheel zooming!
+	/** The mouseWheel event is used for zooming in and out (i.e. changing the fov of the
+	 * perspective)
+	 */
 	public void mouseWheel(MouseEvent event) {
 		  float e = event.getCount();
 		  if (e>0){
@@ -282,11 +310,15 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		  }
 	}
 	
+	/** The mouseDragged event is used for moving the location of the perspective and for
+	 * rotating the perspective 
+	 */
 	public void mouseDragged(MouseEvent event){
+		//translation
 		if (mouseButton == LEFT){
 			perspectiveX += mouseX-pmouseX;
 			perspectiveY += mouseY-pmouseY;
-		}else{
+		}else{ //rotation
 			//left and right mouse position will rotate z axis
 			//up and down mouse movement will rotate x axis
 			zRotMod += (mouseX-pmouseX)/piScaler;
