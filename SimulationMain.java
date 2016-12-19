@@ -40,7 +40,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	private float ball_x = 20f;// - (ball_r*partialXs[10][10]);
 	private float ball_y = 20f;// - (ball_r*partialYs[10][10]);
 //	System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
-	private float ball_z = 100f;//surface[40][40]+.6f;
+	private float ball_z = 100f;
 	
 	/** Standard settings method for processing file. Also, initialize piScaler, because
 	 * it is based on the width and height of the window.*/
@@ -85,63 +85,33 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//which is currently the last point we calculate for our surface. It also attempts
 		//to use the normal vector at that point to place the ball exactly on the surface.
 		ball = new Ball(this,earthImage,ball_x,ball_y,
-				ball_z,5f);
+				ApplicationMath.zFunction(ball_x,ball_y) * WORLD_Z_MAX/maxZ + 5f,5f, WORLD_Z_MAX/maxZ);
 //		System.out.println(ball_x + ", " + ball_y + ", " + ball_z);
 	}
 	
-	/** A function of x and y that gives us the z value for our heightMap*/
-	private float zFunction(float x, float y){
-		float xf = ((sq(x)*x) - (3*x));
-		float yf = ((sq(y)*y) - (3*y));
-
-		return (float)(xf+yf);	
-	}
-	/** Calculates dx, the partial derivative of x for the zFunction */
-	private float partialX(float x, float y){
-		float dx = ((3*sq(x)) - 3);
-		return dx;
-	}
-	/** Calculates dy, the partial derivative of y for the zFunction */
-	private float partialY(float x, float y){
-		float dy = ((3*sq(y)) - 3);
-		return dy;
-	}
-	/** Calculates the partialX as a unit value by dividing by the squares of
-	 * the partialX and partialY at a specific point */
-	private float unitNormalX(float x, float y){
-		return partialX(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
-	}
-	/** Calculates the partialY as a unit value by dividing by the squares of
-	 * the partialX and partialY at a specific point */
-	private float unitNormalY(float x, float y){
-		return partialY(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
-	}
-	
 	/** Creates the surface in pixel units and determines if the z values produced by the
-	 * zFunction need to be scaled down to fit within our 'world' box*/
+	 * ApplicationMath.zFunction need to be scaled down to fit within our 'world' box*/
 	private float[][] createSurface(){
 		float z = 0;
 		//rows
 		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){
 			//cols
 			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
-				z = zFunction(j,i);
+				z = ApplicationMath.zFunction(j,i);
 				if(abs(z) > WORLD_Z_MAX){
 					maxZ = abs(z);
-				}else if(z < 0){
-					maxZ = abs(z);
 				}
-				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = zFunction(j,i);
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.zFunction(j,i);
 			}
 		}
 		//scales all values down..without it, the surface would be huge for exponential functions
 		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){			
 			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
-				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_HEIGHT/maxZ;
+				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_Z_MAX/maxZ;
 				//also calculates partial derivatives and stores them
 				//as unit values
-				partialXs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = unitNormalX(j,i);
-				partialYs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = unitNormalY(j,i);
+				partialXs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.unitPartialX(j,i);
+				partialYs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.unitPartialY(j,i);
 			}
 		}
 		
@@ -205,7 +175,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	 * ApplicationConstants*/
 	private void moveToWorldUnits(){
 		//scale to world units
-		scale(WORLD_TO_PIXEL_X, WORLD_TO_PIXEL_Y,WORLD_TO_PIXEL_Z);
+		scale(WORLD_TO_PIXEL_X, WORLD_TO_PIXEL_Y, WORLD_TO_PIXEL_Z);
 	}
 	
 	/** Draws the box of the world that we want our surface to fit within*/
@@ -227,33 +197,6 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//blue is z axis
 		stroke(0,0,255);
 		line(0,0,-2,0,0,6);
-	}
-	
-	private void updateBall() {
-//		ball.accelerate(0.7f);		
-		pushMatrix();
-		moveToWorldUnits();
-		float[] coords = ball.getCoords();
-		float x = coords[0], y = coords[1], z = coords[2];
-		Float descentX = -unitNormalX(x,y),
-				descentY = -unitNormalY(x,y),
-				newZ = ball.getRadius()+zFunction(x,y) * WORLD_HEIGHT/maxZ;
-//		System.out.println(x + ",  " + y + "w/ partials " + descentX + ", " + descentY);
-		if(descentX.isNaN())
-			descentX = 0f;
-		if(descentY.isNaN())
-			descentY = 0f;
-		float dz = newZ - z;
-		System.out.println(dz + ", " + z);
-		ball.update(descentX, descentY, newZ - z, 0);
-//		ball.incX(descentX);
-//		ball.incY(descentY);
-		ball.setZ(newZ);
-		
-		coords = ball.getCoords();
-		x = (int) (coords[0]+WORLD_WIDTH/2); y = (int) (coords[1]+WORLD_HEIGHT/2);
-//		System.out.println("after descent: " + x + ",  " + y);
-		popMatrix();
 	}
 	
 	/** Draws the unit normal vector at all points in the surface */
@@ -310,7 +253,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			ball.setCoords(ball_x, ball_y, ball_z);
 			break;
 		case ' ':
-			updateBall();
+			ball.update(0.5f);//dt);
 			paused = !paused;
 			break;
 		case '[':

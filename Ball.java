@@ -6,11 +6,12 @@ import processing.core.PShape;
 /** Our Ball class is implemented by processing using triangle strips, which allows us to put
  * our earth texture on the ball. We are still in the process of implementing its location and
  * physics based movement, however some of the variables are already defined. */
-public class Ball implements ApplicationConstants
+public class Ball extends ApplicationMath implements ApplicationConstants
 {
 	/** Define instance variables */
 	private float radius;
 	private float x,y,z;
+	private float zScale;
 	private float mass, inertia, 
 					vtx, vty, 		// translational velocities
 					atx, aty,		// translational accelerations
@@ -27,16 +28,18 @@ public class Ball implements ApplicationConstants
 	//PImage texture variable
 	PImage mySkin;
 	
-	Ball(PApplet inApplet,PImage in_skin,float x_, float y_, float z_, float radius_){
+	Ball(PApplet inApplet,PImage in_skin,float x_, float y_, float z_, float radius_, float zScale_){
 		x = x_;
 		y = y_;
 		z = z_;
 		radius = radius_;
+		zScale = zScale_;
 		
 		mySkin=in_skin;
 		
 		refApplet = inApplet;
-		vtx = vty = atx = aty = 0.0f;
+		vtx = 1.2f*-unitPartialX(x,y);
+		vty = 1.2f*-unitPartialY(x,y);
 		mass = 50.0f;
 		inertia = (2/5) * mass * (radius*radius);
 		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
@@ -49,36 +52,29 @@ public class Ball implements ApplicationConstants
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
-	void update(float dx, float dy, float dz, float dt) {//float gradX, float gradY) {
-		x += atx;
-		y += aty; 
+	void update(float dt) {//float gradX, float gradY) {
 
-		System.out.println("dx,dy,dz: " + dx + ", " + dy + ", " + dz);
+		//System.out.println("dx,dy,dz: " + dx + ", " + dy + ", " + dz);
 		
-		float thetaX = (float)Math.asin(dz/dx);
-		System.out.println("thetaX: " + thetaX);
-		float atx = (float)((2/3)*GRAVITY*Math.sin(thetaX));
+		float px = x, py = y, pz = z;
 		
-		System.out.println(atx);
+		x += vtx*dt;
+		y += vty*dt;
 		
-		float thetaY = (float)Math.asin(dz/dy);
-		float aty = (float)((2/3)*GRAVITY*Math.sin(thetaY));
-
-		System.out.println(aty);
+		vtx += atx*dt;
+		vty += aty*dt;
 		
-		float nx = x + atx;
-		System.out.println("nx: " + nx);
-		Float new_angle_x = (float) Math.acos(nx/x);
-		if(!new_angle_x.isNaN())
-			angle_x = new_angle_x;
-		x=nx;
+		float dz = zFunction(x,y) - zFunction(px,py);
 		
-		float ny = y+aty;
-		System.out.println("ny: " + ny);
-		Float new_angle_y = (float) Math.acos(ny/y);
-		if(!new_angle_y.isNaN())
-			angle_y = new_angle_y;
-		y=ny;
+		System.out.println("dz,px,dz/px,partialx: " + dz + ", " + px + ", " + dz/px + ", " + partialX(px,py));
+		float thetaX = (float)Math.asin(dz/partialX(px,py));
+		float thetaY = (float)Math.asin(dz/partialY(px,py));
+		
+		atx = (float) ((2/3)*GRAVITY*Math.sin(thetaX));
+		aty = (float) ((2/3)*GRAVITY*Math.sin(thetaY));
+		
+		z += dz * zScale;
+		
 	}
 	/** Helper method for rotating the ball*/
 	void rotate(float amt) {
