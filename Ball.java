@@ -40,8 +40,8 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		refApplet = inApplet;
 		vtx = 1.2f*-unitPartialX(x,y);
 		vty = 1.2f*-unitPartialY(x,y);
-		mass = 50.0f;
-		inertia = (2/5) * mass * (radius*radius);
+		mass = 5.0f;
+		inertia = (2/5f) * mass * (radius*radius);
 		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
 		ball.setTexture(mySkin);
 	}
@@ -64,16 +64,16 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		vtx += atx*dt;
 		vty += aty*dt;
 		
-		float dz = zFunction(x,y) - zFunction(px,py);
+		float dz = zScale* (zFunction(x,y) - zFunction(px,py));
 		
-		System.out.println("dz,px,dz/px,partialx: " + dz + ", " + px + ", " + dz/px + ", " + partialX(px,py));
-		float thetaX = (float)Math.asin(dz/partialX(px,py));
-		float thetaY = (float)Math.asin(dz/partialY(px,py));
+		atx = (float) ((2/3f)*GRAVITY*-unitPartialX(px,py));
+		aty = (float) ((2/3f)*GRAVITY*-unitPartialY(px,py));
 		
-		atx = (float) ((2/3)*GRAVITY*Math.sin(thetaX));
-		aty = (float) ((2/3)*GRAVITY*Math.sin(thetaY));
-		
-		z += dz * zScale;
+		z += dz;
+
+		// friction 
+		vtx *= 0.98f;
+		vty *= 0.98f;
 		
 	}
 	/** Helper method for rotating the ball*/

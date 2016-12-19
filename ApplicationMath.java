@@ -11,19 +11,18 @@ public class ApplicationMath {
 	
 	/** A function of x and y that gives us the z value for our heightMap*/
 	static float zFunction(float x, float y){
-		float xf = ((sq(x)*x) - (3*x));
-		float yf = ((sq(y)*y) - (3*y));
-
+		float xf = sq(x)/5;//((sq(x)*x) - (3*x));
+		float yf = sq(y)/5;//((sq(y)*y) - (3*y));
 		return (float)(xf+yf);	
 	}
 	/** Calculates dx, the partial derivative of x for the zFunction */
 	static float partialX(float x, float y){
-		float dx = ((3*sq(x)) - 3);
+		float dx = 2*x/5;//((3*sq(x)) - 3);
 		return dx;
 	}
 	/** Calculates dy, the partial derivative of y for the zFunction */
 	static float partialY(float x, float y){
-		float dy = ((3*sq(y)) - 3);
+		float dy = 2*y/5;//((3*sq(y)) - 3);
 		return dy;
 	}
 	/** Calculates the partialX as a unit value by dividing by the squares of

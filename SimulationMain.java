@@ -37,8 +37,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	private boolean paused = false;
 	
-	private float ball_x = 20f;// - (ball_r*partialXs[10][10]);
-	private float ball_y = 20f;// - (ball_r*partialYs[10][10]);
+	private float ball_x = 13f;// - (ball_r*partialXs[10][10]);
+	private float ball_y = 13f;// - (ball_r*partialYs[10][10]);
 //	System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
 	private float ball_z = 100f;
 	
@@ -168,6 +168,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		noStroke();
 //		if(!paused)
 //			updateBall();
+		ball.update(0.05f);//dt);
 		ball.draw();
 		popMatrix();
 	}
