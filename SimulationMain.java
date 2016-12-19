@@ -77,15 +77,18 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//Initialize ball..currently this is hardcoded to place ball at 20,20
 		//which is currently the last point we calculate for our surface. It also attempts
 		//to use the normal vector at that point to place the ball exactly on the surface.
-		float ball_x = 20 - (5*partialXs[40][40]);
-		float ball_y = 20 - (5*partialYs[40][40]);
+		float ball_r = 5f;
+		float ball_x = -10f;// - (ball_r*partialXs[10][10]);
+		float ball_y = 20f;// - (ball_r*partialYs[10][10]);
+//		System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
 		float ball_z = surface[40][40]+.6f;
 		ball = new Ball(this,earthImage,ball_x,ball_y,
-				ball_z,5);
+				ball_z,ball_r);
+//		System.out.println(ball_x + ", " + ball_y + ", " + ball_z);
 	}
 	
 	/** A function of x and y that gives us the z value for our heightMap*/
-	private float zFunction(int x, int y){
+	private float zFunction(float x, float y){
 		float xf = ((sq(x)*x) - (3*x));
 		float yf = ((sq(y)*y) - (3*y));
 
@@ -112,20 +115,6 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		return partialY(x,y)/sqrt(sq(partialX(x,y))+sq(partialY(x,y)));
 	}
 	
-	/** Possible helper method..not currently being used */
-	private float gradient(){
-		float[] coords = ball.getCoords();
-
-		int x = (int) (coords[0]+WORLD_WIDTH/2), y = (int) (coords[1]+WORLD_HEIGHT/2);
-		ball.update();
-		if(x <= WORLD_WIDTH &&
-				y  <= WORLD_HEIGHT && 
-				x >= 0 && y >= 0) {
-			ball.setZ(surface[x][y]);
-		}
-		
-		return 0;
-	}
 	/** Creates the surface in pixel units and determines if the z values produced by the
 	 * zFunction need to be scaled down to fit within our 'world' box*/
 	private float[][] createSurface(){
@@ -287,7 +276,27 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			xRotMod = 0;
 			break;
 		case ' ':
-			ball.accelerate(0.7f);
+//			ball.accelerate(0.7f);		
+			pushMatrix();
+			moveToWorldUnits();
+			float[] coords = ball.getCoords();
+			float x = coords[0], y = coords[1];
+			Float descentX = -unitNormalX(x,y),
+					descentY = -unitNormalY(x,y),
+					newZ = ball.getRadius()+zFunction(x,y) * WORLD_HEIGHT/maxZ;
+			System.out.println(x + ",  " + y + "w/ partials " + descentX + ", " + descentY);
+			if(descentX.isNaN())
+				descentX = 0f;
+			if(descentY.isNaN())
+				descentY = 0f;
+			ball.incX(descentX);
+			ball.incY(descentY);
+			ball.setZ(newZ);
+			
+			coords = ball.getCoords();
+			x = (int) (coords[0]+WORLD_WIDTH/2); y = (int) (coords[1]+WORLD_HEIGHT/2);
+			System.out.println("after descent: " + x + ",  " + y);
+			popMatrix();
 			break;
 		case '[':
 			ball.rotate(0.2f);

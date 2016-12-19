@@ -37,6 +37,18 @@ public class Ball {
 		ball.setTexture(mySkin);
 	}
 	
+	public float getRadius() {
+		return radius;
+	}
+	
+	public void incX(float dx){
+		x+=dx;
+	}
+	
+	public void incY(float dy){
+		y+=dy;
+	}
+	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
 	void update() {//float gradX, float gradY) {
