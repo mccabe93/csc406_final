@@ -35,6 +35,14 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	private Ball ball;
 	
+	private boolean paused = false;
+	
+	private float ball_r = 5f;
+	private float ball_x = 20f;// - (ball_r*partialXs[10][10]);
+	private float ball_y = 20f;// - (ball_r*partialYs[10][10]);
+//	System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
+	private float ball_z = 100f;//surface[40][40]+.6f;
+	
 	/** Standard settings method for processing file. Also, initialize piScaler, because
 	 * it is based on the width and height of the window.*/
 	public void settings() {
@@ -77,11 +85,6 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//Initialize ball..currently this is hardcoded to place ball at 20,20
 		//which is currently the last point we calculate for our surface. It also attempts
 		//to use the normal vector at that point to place the ball exactly on the surface.
-		float ball_r = 5f;
-		float ball_x = -10f;// - (ball_r*partialXs[10][10]);
-		float ball_y = 20f;// - (ball_r*partialYs[10][10]);
-//		System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
-		float ball_z = surface[40][40]+.6f;
 		ball = new Ball(this,earthImage,ball_x,ball_y,
 				ball_z,ball_r);
 //		System.out.println(ball_x + ", " + ball_y + ", " + ball_z);
@@ -194,6 +197,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//gradient();
 //		ball.update();
 		noStroke();
+		if(!paused)
+			updateBall();
 		ball.draw();
 		popMatrix();
 	}
@@ -223,6 +228,30 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//blue is z axis
 		stroke(0,0,255);
 		line(0,0,-2,0,0,6);
+	}
+	
+	private void updateBall() {
+//		ball.accelerate(0.7f);		
+		pushMatrix();
+		moveToWorldUnits();
+		float[] coords = ball.getCoords();
+		float x = coords[0], y = coords[1];
+		Float descentX = -unitNormalX(x,y),
+				descentY = -unitNormalY(x,y),
+				newZ = ball.getRadius()+zFunction(x,y) * WORLD_HEIGHT/maxZ;
+//		System.out.println(x + ",  " + y + "w/ partials " + descentX + ", " + descentY);
+		if(descentX.isNaN())
+			descentX = 0f;
+		if(descentY.isNaN())
+			descentY = 0f;
+		ball.incX(descentX);
+		ball.incY(descentY);
+		ball.setZ(newZ);
+		
+		coords = ball.getCoords();
+		x = (int) (coords[0]+WORLD_WIDTH/2); y = (int) (coords[1]+WORLD_HEIGHT/2);
+//		System.out.println("after descent: " + x + ",  " + y);
+		popMatrix();
 	}
 	
 	/** Draws the unit normal vector at all points in the surface */
@@ -275,34 +304,31 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			zRotMod = 0;
 			xRotMod = 0;
 			break;
+		case 'b':
+			ball.setCoords(ball_x, ball_y, ball_z);
+			break;
 		case ' ':
-//			ball.accelerate(0.7f);		
-			pushMatrix();
-			moveToWorldUnits();
-			float[] coords = ball.getCoords();
-			float x = coords[0], y = coords[1];
-			Float descentX = -unitNormalX(x,y),
-					descentY = -unitNormalY(x,y),
-					newZ = ball.getRadius()+zFunction(x,y) * WORLD_HEIGHT/maxZ;
-			System.out.println(x + ",  " + y + "w/ partials " + descentX + ", " + descentY);
-			if(descentX.isNaN())
-				descentX = 0f;
-			if(descentY.isNaN())
-				descentY = 0f;
-			ball.incX(descentX);
-			ball.incY(descentY);
-			ball.setZ(newZ);
-			
-			coords = ball.getCoords();
-			x = (int) (coords[0]+WORLD_WIDTH/2); y = (int) (coords[1]+WORLD_HEIGHT/2);
-			System.out.println("after descent: " + x + ",  " + y);
-			popMatrix();
+			paused = !paused;
 			break;
 		case '[':
-			ball.rotate(0.2f);
+			//ball.rotate(0.2f);
+			ball_x += 1f;
+			System.out.println(ball_x);
 			break;
 		case ']':
-			ball.rotate(-0.2f);
+			ball_x -= 1f;
+			System.out.println(ball_x);
+			//ball.rotate(-0.2f);
+			break;
+		case '-':
+			//ball.rotate(0.2f);
+			ball_y += 1f;
+			System.out.println(ball_y);
+			break;
+		case '=':
+			ball_y -= 1f;
+			System.out.println(ball_y);
+			//ball.rotate(-0.2f);
 			break;
 		}
 	}
