@@ -33,4 +33,5 @@ public interface ApplicationConstants {
 	float WORLD_TO_PIXEL_Y = WINDOW_WIDTH/WORLD_HEIGHT;
 	float WORLD_TO_PIXEL_Z = WINDOW_DEPTH/WORLD_DEPTH;
 	
+	float GRAVITY = 9.8f;
 }

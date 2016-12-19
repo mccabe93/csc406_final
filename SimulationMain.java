@@ -37,7 +37,6 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	private boolean paused = false;
 	
-	private float ball_r = 5f;
 	private float ball_x = 20f;// - (ball_r*partialXs[10][10]);
 	private float ball_y = 20f;// - (ball_r*partialYs[10][10]);
 //	System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
@@ -86,7 +85,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//which is currently the last point we calculate for our surface. It also attempts
 		//to use the normal vector at that point to place the ball exactly on the surface.
 		ball = new Ball(this,earthImage,ball_x,ball_y,
-				ball_z,ball_r);
+				ball_z,5f);
 //		System.out.println(ball_x + ", " + ball_y + ", " + ball_z);
 	}
 	
@@ -197,8 +196,8 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//gradient();
 //		ball.update();
 		noStroke();
-		if(!paused)
-			updateBall();
+//		if(!paused)
+//			updateBall();
 		ball.draw();
 		popMatrix();
 	}
@@ -235,7 +234,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		pushMatrix();
 		moveToWorldUnits();
 		float[] coords = ball.getCoords();
-		float x = coords[0], y = coords[1];
+		float x = coords[0], y = coords[1], z = coords[2];
 		Float descentX = -unitNormalX(x,y),
 				descentY = -unitNormalY(x,y),
 				newZ = ball.getRadius()+zFunction(x,y) * WORLD_HEIGHT/maxZ;
@@ -244,8 +243,11 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			descentX = 0f;
 		if(descentY.isNaN())
 			descentY = 0f;
-		ball.incX(descentX);
-		ball.incY(descentY);
+		float dz = newZ - z;
+		System.out.println(dz + ", " + z);
+		ball.update(descentX, descentY, newZ - z, 0);
+//		ball.incX(descentX);
+//		ball.incY(descentY);
 		ball.setZ(newZ);
 		
 		coords = ball.getCoords();
@@ -308,6 +310,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			ball.setCoords(ball_x, ball_y, ball_z);
 			break;
 		case ' ':
+			updateBall();
 			paused = !paused;
 			break;
 		case '[':
