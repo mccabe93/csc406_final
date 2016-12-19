@@ -11,8 +11,8 @@ public class Ball {
 	private float radius;
 	private float x,y,z;
 	private float vx, vy, acceleration;
-	private float angle_planar, // angle along x,y axes (direction the ball is moving along the surface)
-					angle_rotational; // angle the ball is moving relative to z axis (rotation of the ball)
+	private float angle_x, // angle along x,y axes (direction the ball is moving along the surface)
+					angle_y; // angle the ball is moving relative to z axis (rotation of the ball)
 	//Our ball is a PShape object
 	private PShape ball;
 	
@@ -42,11 +42,19 @@ public class Ball {
 	}
 	
 	public void incX(float dx){
-		x+=dx;
+		float nx = x+dx;
+		Float new_angle_x = (float) Math.acos(nx/x);
+		if(!new_angle_x.isNaN())
+			angle_x = new_angle_x;
+		x=nx;
 	}
 	
 	public void incY(float dy){
-		y+=dy;
+		float ny = y+dy;
+		Float new_angle_y = (float) Math.acos(ny/y);
+		if(!new_angle_y.isNaN())
+			angle_y = new_angle_y;
+		y=ny;
 	}
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
@@ -54,8 +62,8 @@ public class Ball {
 	void update() {//float gradX, float gradY) {
 		x += vx;
 		y += vy; 
-		vx = (float) (acceleration*Math.cos(angle_planar));
-		vy = (float) (acceleration*Math.sin(angle_planar));
+//		vx = (float) (acceleration*Math.cos(angle_planar));
+//		vy = (float) (acceleration*Math.sin(angle_planar));
 		if(acceleration > 0.03f)
 			acceleration -= 0.05f;
 		else
@@ -63,7 +71,7 @@ public class Ball {
 	}
 	/** Helper method for rotating the ball*/
 	void rotate(float amt) {
-		angle_planar += amt;
+//		angle_planar += amt;
 	}
 	/** Helper method for accelerating the ball*/
 	void accelerate(float amt) {
@@ -79,17 +87,25 @@ public class Ball {
 		return new float[]{x,y,z};
 	}
 	
+	public void setCoords(float x_, float y_, float z_) {
+		x = x_;
+		y = y_;
+		z = z_;
+	}
+	
 	/** Our draw function gets called in world units and draws the ball with its texture */
 	void draw(){
 		refApplet.pushMatrix();
 
 		refApplet.translate(x,y,z);
+		refApplet.rotateX(angle_x);
+		refApplet.rotateY(angle_y);
 		//This noStroke has no effect..don't know why yet
 		refApplet.noStroke();
 		refApplet.shape(ball);
 		//reference line for ball's intended movement
-		refApplet.line(0, 0, 0, 
-				(float)(2000*Math.cos(angle_planar)), (float)(200*Math.sin(angle_planar)), 0);
+//		refApplet.line(0, 0, 0, 
+//				(float)(2000*Math.cos(angle_planar)), (float)(200*Math.sin(angle_planar)), 0);
 		refApplet.popMatrix();
 	}
 }
