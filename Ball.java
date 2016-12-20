@@ -12,6 +12,16 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private float x,y,z;
 	private float vx, vy, ax, ay;
 	
+	private float drag = 0.1f;
+	
+	/** resistance vector <x,y> **/
+	private float resistanceX,
+					resistanceY;
+
+	/** gravity vector <x,y> **/
+	private float gravityX, 
+					gravityY;
+	
 	private float mass, radius;
 	
 	private float zScale;
@@ -33,11 +43,11 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		mass = mass_;
 		radius = radius_;
 		
-		vx = unitVelocityX(x,y);
-		vy = unitVelocityY(x,y);
+		vx = 30f*unitPartialX(x,y);
+		vy = 30f*unitPartialX(x,y);
 		
-		ax = unitAccelerationX(x,y);
-		ay = unitAccelerationY(x,y);
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);
 		
 		zScale = zScale_;
 		
@@ -48,23 +58,41 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
 	void update(float dt){
+		
+		//First we need to update our x,y position based on our velocity
+		x += vx * dt;// + unitPartialX(x,y) * radius;
+		y += vy * dt;// + unitPartialY(x,y) * radius;
+		
+		//Then we can map that to a z value on our surface
+		z = zScale*zFunction(x,y) + radius;
+
+		physics(dt);
+		
+//		System.out.println(magnitude(vx,vy));
+		
+		//System.out.println("x,y: " + x + ", " + y + "\nvx,vy: " + vx + ", " + vy + "\nax,ay: " + ax +", " + ay);
+	}
+	
+	void physics(float dt) {
 		//Store old vx and vy for calculations
 		float pvx = vx, pvy = vy;
 		
-		//First we need to update our x,y position based on our velocity
-		x += vx * dt;
-		y += vy * dt;
-		
-		//Then we can map that to a z value on our surface
-		z = zScale*zFunction(x,y);
-			
-		//Next, let's update our velocity based on our acceleration
-		vx += ax * dt;
-		vy += ay * dt;
-		
 		//Now we can update our acceleration
-		ax = unitVelocityX(x,y) * GRAVITY * pvx;
-		ay = unitVelocityY(x,y) * GRAVITY * pvy;		
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);// * dt; // * pvy;	
+		
+		// recalculate the friction vector
+		resistanceX = (2/3f) * unitPartialX(x,y)*GRAVITY;
+		resistanceY = (2/3f) * unitPartialY(x,y)*GRAVITY;
+		
+		// recalculate the gravity vector
+		gravityX = -unitPartialX(x,y) * GRAVITY;
+		gravityY = -unitPartialY(x,y) * GRAVITY;
+		
+		//Next, let's update our velocity based on our acceleration
+		vx = ((pvx + (ax + gravityX - resistanceX)*dt) * (1-drag*dt));
+		vy = ((pvy + (ay + gravityY - resistanceY)*dt) * (1-drag*dt));
+		
 	}
 	
 	/** Getter for ball radius */

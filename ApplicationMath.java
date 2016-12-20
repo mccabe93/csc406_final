@@ -13,7 +13,7 @@ public class ApplicationMath {
 	/** Normalize helper function. This function takes two constants, presumably
 	 * constants in a vector, such that the output is the square root of the constants
 	 */
-	static float normalize(float c0, float c1){
+	static float magnitude(float c0, float c1){
 		return sqrt(sq(c0) + sq(c1));
 	}
 	
@@ -50,25 +50,25 @@ public class ApplicationMath {
 	/**Finds and calculates the x component of the unit velocity vector at a point (x0,y0)
 	 * in the steepest rate of change.
 	 */
-	static float unitVelocityX(float x0, float y0){
-		return partialX(x0,y0)/normalize(partialX(x0,y0),partialY(x0,y0));
+	static float unitPartialX(float x0, float y0){
+		return partialX(x0,y0)/magnitude(partialX(x0,y0),partialY(x0,y0));
 	}
 	
 	/**Finds and calculates the x component of the unit velocity vector at a point (x0,y0)
 	 * in the steepest rate of change.
 	 */
-	static float unitVelocityY(float x0, float y0){
-		return partialY(x0,y0)/normalize(partialX(x0,y0),partialY(x0,y0));
+	static float unitPartialY(float x0, float y0){
+		return partialY(x0,y0)/magnitude(partialX(x0,y0),partialY(x0,y0));
 	}
 	
 	/** Functions in same way as unitVelocityX */
 	static float unitAccelerationX(float x0, float y0){
-		return secondPartialX(x0,y0)/normalize(secondPartialX(x0,y0),secondPartialY(x0,y0));
+		return secondPartialX(x0,y0)/magnitude(secondPartialX(x0,y0),secondPartialY(x0,y0));
 	}
 	
 	/** Functions in same way as unitVelocityY */
 	static float unitAccelerationY(float x0, float y0){
-		return secondPartialY(x0,y0)/normalize(secondPartialX(x0,y0),secondPartialY(x0,y0));
+		return secondPartialY(x0,y0)/magnitude(secondPartialX(x0,y0),secondPartialY(x0,y0));
 	}
 	
 }
