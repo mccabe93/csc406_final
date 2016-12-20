@@ -12,7 +12,7 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private float x,y,z;
 	private float vx, vy, ax, ay;
 	
-	private float drag = 0.6f;
+	private float drag = 0.3f;
 	
 	/** resistance vector <x,y> **/
 	private float resistanceX,
@@ -24,7 +24,7 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	
 	private Float thetaX, thetaY, thetaZ;
 	
-	private float mass, radius;
+	private float radius;
 	
 	private float zScale;
 	
@@ -32,8 +32,8 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private PApplet refApplet;
 	private PImage mySkin;
 	
-	Ball(PApplet inApplet_,PImage in_skin,float x_, float y_, float z_,
-			float mass_, float radius_, float zScale_){
+	Ball(PApplet inApplet_,PImage in_skin,float x_, float y_, float z_, float radius_,
+			float initialVelocity_, float drag_, float zScale_){
 		
 		refApplet = inApplet_;
 		mySkin=in_skin;	
@@ -42,11 +42,12 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		y = y_;
 		z = z_;
 		
-		mass = mass_;
 		radius = radius_;
 		
-		vx = 30f*unitPartialX(x,y);
-		vy = 30f*unitPartialX(x,y);
+		drag = drag_;
+		
+		vx = initialVelocity_*unitPartialX(x,y);
+		vy = initialVelocity_*unitPartialX(x,y);
 		
 		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
 		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);
@@ -73,10 +74,6 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		z = zScale*zFunction(x,y) + radius;
 
 		physics(dt);
-		
-//		System.out.println(magnitude(vx,vy));
-		
-		//System.out.println("x,y: " + x + ", " + y + "\nvx,vy: " + vx + ", " + vy + "\nax,ay: " + ax +", " + ay);
 	}
 	
 	void physics(float dt) {
@@ -87,7 +84,7 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
 		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);// * dt; // * pvy;	
 		
-		// recalculate the friction vector
+		// recalculate the resistance vector
 		resistanceX = (2/3f) * unitPartialX(x,y)*GRAVITY;
 		resistanceY = (2/3f) * unitPartialY(x,y)*GRAVITY;
 		
