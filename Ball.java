@@ -12,7 +12,7 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private float x,y,z;
 	private float vx, vy, ax, ay;
 	
-	private float drag = 0.1f;
+	private float drag = 0.6f;
 	
 	/** resistance vector <x,y> **/
 	private float resistanceX,
@@ -21,6 +21,8 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	/** gravity vector <x,y> **/
 	private float gravityX, 
 					gravityY;
+	
+	private Float thetaX, thetaY, thetaZ;
 	
 	private float mass, radius;
 	
@@ -53,6 +55,10 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		
 		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
 		ball.setTexture(mySkin);
+		
+		thetaX = 0f;
+		thetaY = 0f;
+		thetaZ = 0f;
 	}
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
@@ -93,6 +99,20 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		vx = ((pvx + (ax + gravityX - resistanceX)*dt) * (1-drag*dt));
 		vy = ((pvy + (ay + gravityY - resistanceY)*dt) * (1-drag*dt));
 		
+		float dz = zFunction(x,y) - zFunction(pvx,pvy);
+		float ptx = thetaX, pty = thetaY, ptz = thetaZ;
+		thetaX += (radius * (float)Math.acos(Math.cos(dz/vx))) * dt;
+		thetaY += (radius * (float)Math.asin(Math.sin(dz/vy))) * dt;
+		if(thetaX.isNaN())
+			thetaX = ptx;
+		if(thetaY.isNaN())
+			thetaY = pty;
+
+		thetaZ += (radius* (float)Math.atan(Math.tan(vy/vx))) * dt;
+		if(thetaZ.isNaN())
+			thetaZ = ptz;
+		
+//		System.out.println("thetaX,thetaY: " + thetaX + ", " + thetaY);
 	}
 	
 	/** Getter for ball radius */
@@ -116,6 +136,9 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		refApplet.pushMatrix();
 		
 		refApplet.translate(x,y,z);
+		refApplet.rotateX(thetaX);
+		refApplet.rotateY(thetaY);
+		refApplet.rotateZ(thetaZ);
 		//refApplet.translate(-unitVelocityX(x,y)*radius,-unitVelocityY(x,y)*radius,radius);
 		refApplet.shape(ball);
 		
