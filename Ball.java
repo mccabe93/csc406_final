@@ -12,7 +12,19 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private float x,y,z;
 	private float vx, vy, ax, ay;
 	
-	private float mass, radius;
+	private float drag = 0.3f;
+	
+	/** resistance vector <x,y> **/
+	private float resistanceX,
+					resistanceY;
+
+	/** gravity vector <x,y> **/
+	private float gravityX, 
+					gravityY;
+	
+	private Float thetaX, thetaY, thetaZ;
+	
+	private float radius;
 	
 	private float zScale;
 	
@@ -20,8 +32,8 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private PApplet refApplet;
 	private PImage mySkin;
 	
-	Ball(PApplet inApplet_,PImage in_skin,float x_, float y_, float z_,
-			float mass_, float radius_, float zScale_){
+	Ball(PApplet inApplet_,PImage in_skin,float x_, float y_, float z_, float radius_,
+			float initialVelocity_, float drag_, float zScale_){
 		
 		refApplet = inApplet_;
 		mySkin=in_skin;	
@@ -30,41 +42,74 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		y = y_;
 		z = z_;
 		
-		mass = mass_;
 		radius = radius_;
 		
-		vx = unitVelocityX(x,y);
-		vy = unitVelocityY(x,y);
+		drag = drag_;
 		
-		ax = unitAccelerationX(x,y);
-		ay = unitAccelerationY(x,y);
+		vx = initialVelocity_*unitPartialX(x,y);
+		vy = initialVelocity_*unitPartialX(x,y);
+		
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);
 		
 		zScale = zScale_;
 		
 		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
 		ball.setTexture(mySkin);
+		
+		thetaX = 0f;
+		thetaY = 0f;
+		thetaZ = 0f;
 	}
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
 	void update(float dt){
+		
+		//First we need to update our x,y position based on our velocity
+		x += vx * dt;// + unitPartialX(x,y) * radius;
+		y += vy * dt;// + unitPartialY(x,y) * radius;
+		
+		//Then we can map that to a z value on our surface
+		z = zScale*zFunction(x,y) + radius;
+
+		physics(dt);
+	}
+	
+	void physics(float dt) {
 		//Store old vx and vy for calculations
 		float pvx = vx, pvy = vy;
 		
-		//First we need to update our x,y position based on our velocity
-		x += vx * dt;
-		y += vy * dt;
-		
-		//Then we can map that to a z value on our surface
-		z = zScale*zFunction(x,y);
-			
-		//Next, let's update our velocity based on our acceleration
-		vx += ax * dt;
-		vy += ay * dt;
-		
 		//Now we can update our acceleration
-		ax = unitVelocityX(x,y) * GRAVITY * pvx;
-		ay = unitVelocityY(x,y) * GRAVITY * pvy;		
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);// * dt; // * pvy;	
+		
+		// recalculate the resistance vector
+		resistanceX = (2/3f) * unitPartialX(x,y)*GRAVITY;
+		resistanceY = (2/3f) * unitPartialY(x,y)*GRAVITY;
+		
+		// recalculate the gravity vector
+		gravityX = -unitPartialX(x,y) * GRAVITY;
+		gravityY = -unitPartialY(x,y) * GRAVITY;
+		
+		//Next, let's update our velocity based on our acceleration
+		vx = ((pvx + (ax + gravityX - resistanceX)*dt) * (1-drag*dt));
+		vy = ((pvy + (ay + gravityY - resistanceY)*dt) * (1-drag*dt));
+		
+		float dz = zFunction(x,y) - zFunction(pvx,pvy);
+		float ptx = thetaX, pty = thetaY, ptz = thetaZ;
+		thetaX += (radius * (float)Math.acos(Math.cos(dz/vx))) * dt;
+		thetaY += (radius * (float)Math.asin(Math.sin(dz/vy))) * dt;
+		if(thetaX.isNaN())
+			thetaX = ptx;
+		if(thetaY.isNaN())
+			thetaY = pty;
+
+		thetaZ += (radius* (float)Math.atan(Math.tan(vy/vx))) * dt;
+		if(thetaZ.isNaN())
+			thetaZ = ptz;
+		
+//		System.out.println("thetaX,thetaY: " + thetaX + ", " + thetaY);
 	}
 	
 	/** Getter for ball radius */
@@ -88,6 +133,9 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		refApplet.pushMatrix();
 		
 		refApplet.translate(x,y,z);
+		refApplet.rotateX(thetaX);
+		refApplet.rotateY(thetaY);
+		refApplet.rotateZ(thetaZ);
 		//refApplet.translate(-unitVelocityX(x,y)*radius,-unitVelocityY(x,y)*radius,radius);
 		refApplet.shape(ball);
 		
