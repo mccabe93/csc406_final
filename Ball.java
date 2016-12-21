@@ -1,6 +1,7 @@
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PImage;
+import processing.core.PMatrix;
 import processing.core.PShape;
 
 /** Our Ball class is implemented by processing using triangle strips, which allows us to put
@@ -22,9 +23,9 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	private float gravityX, 
 					gravityY;
 	
-	private Float thetaX, thetaY, thetaZ;
+	private double thetaX, thetaY, thetaZ;
 	
-	private float radius;
+	private double radius,diameter,circumference;
 	
 	private float zScale;
 	
@@ -43,6 +44,8 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		z = z_;
 		
 		radius = radius_;
+		diameter = radius*2;
+		circumference = 2*Math.PI*radius;
 		
 		drag = drag_;
 		
@@ -54,31 +57,27 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		
 		zScale = zScale_;
 		
-		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
+		ball = refApplet.createShape(PConstants.SPHERE, new float[]{(float) radius});
 		ball.setTexture(mySkin);
 		
-		thetaX = 0f;
-		thetaY = 0f;
-		thetaZ = 0f;
+		thetaX = 0;
+		thetaY = 0;
+		thetaZ = 0;
 	}
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
 	void update(float dt){
-		
+		float px = x, py = y, pz = z,pvx = vx, pvy = vy;
+
 		//First we need to update our x,y position based on our velocity
-		x += vx * dt;// + unitPartialX(x,y) * radius;
-		y += vy * dt;// + unitPartialY(x,y) * radius;
+		x += vx * dt;
+		y += vy * dt;
 		
 		//Then we can map that to a z value on our surface
-		z = zScale*zFunction(x,y) + radius;
-
-		physics(dt);
-	}
-	
-	void physics(float dt) {
-		//Store old vx and vy for calculations
-		float pvx = vx, pvy = vy;
+		z = (float) (zScale*zFunction(x,y) + radius);
+		
+		float dx = x-px, dy = y-py, dz = z-pz;
 		
 		//Now we can update our acceleration
 		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
@@ -96,24 +95,25 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		vx = ((pvx + (ax + gravityX - resistanceX)*dt) * (1-drag*dt));
 		vy = ((pvy + (ay + gravityY - resistanceY)*dt) * (1-drag*dt));
 		
-		float dz = zFunction(x,y) - zFunction(pvx,pvy);
-		float ptx = thetaX, pty = thetaY, ptz = thetaZ;
-		thetaX += (radius * (float)Math.acos(Math.cos(dz/vx))) * dt;
-		thetaY += (radius * (float)Math.asin(Math.sin(dz/vy))) * dt;
-		if(thetaX.isNaN())
-			thetaX = ptx;
-		if(thetaY.isNaN())
-			thetaY = pty;
-
-		thetaZ += (radius* (float)Math.atan(Math.tan(vy/vx))) * dt;
-		if(thetaZ.isNaN())
-			thetaZ = ptz;
+		//if the direction of our last velocity is same as our new velocity
+		if(Math.signum(pvy) == Math.signum(vy)){
+			//then we can continue rotation in this direction
+			thetaY -= Math.signum(pvy)*magnitude(dy,dz)/radius;
+		}else{
+			thetaY += Math.signum(vy)*magnitude(dy,dz)/radius; 
+		}
 		
-//		System.out.println("thetaX,thetaY: " + thetaX + ", " + thetaY);
+		if(Math.signum(pvx) == Math.signum(vx)){
+			//then we can continue rotation in this direction
+			thetaX -= Math.signum(pvx)*magnitude(dx,dz)/radius;
+		}else{
+			thetaX += Math.signum(vx)*magnitude(dx,dz)/radius; 
+		}	
+		
 	}
-	
+
 	/** Getter for ball radius */
-	public float getRadius() {
+	public double getRadius() {
 		return radius;
 	}
 	
@@ -133,12 +133,26 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 		refApplet.pushMatrix();
 		
 		refApplet.translate(x,y,z);
-		refApplet.rotateX(thetaX);
-		refApplet.rotateY(thetaY);
-		refApplet.rotateZ(thetaZ);
-		//refApplet.translate(-unitVelocityX(x,y)*radius,-unitVelocityY(x,y)*radius,radius);
+		
+		refApplet.rotateX((float) thetaY);
+		refApplet.rotateY((float) thetaX);
+		
 		refApplet.shape(ball);
 		
 		refApplet.popMatrix();
+	}
+	
+	/** Draws the x,y,z axises */
+	private void drawRef(){
+//		draws reference axises
+		//red is x axis
+		refApplet.stroke(255, 0, 0);
+		refApplet.line(-2, 0, 6, 0);
+		//green is y axis
+		refApplet.stroke(0, 255, 0);
+		refApplet.line(0, -2, 0, 6);
+		//blue is z axis
+		refApplet.stroke(0,0,255);
+		refApplet.line(0,0,-2,0,0,6);
 	}
 }
