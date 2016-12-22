@@ -26,7 +26,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	//such that a mouse drag from left to right would be two full rotations
 	private float piScaler;
 	
-	private float maxZ;
+	private float maxZ, zScale;
 	
 	//Define our surface, partial derivatives for each point, and our ball
 	private float[][] surface;
@@ -35,12 +35,17 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	private Ball ball;
 	
-	private boolean paused = false;
+	private boolean paused = true;
 	
-	private float ball_x = 13f;// - (ball_r*partialXs[10][10]);
-	private float ball_y = 13f;// - (ball_r*partialYs[10][10]);
-//	System.out.println(partialXs[40][40] + "\n" + partialYs[40][40]);
-	private float ball_z = 100f;
+	private long frame_ = 0L;
+	private int timeLastAnimated_;
+	
+	private float ball_x = WORLD_X_MAX;
+	private float ball_y = WORLD_Y_MAX;
+	private float ball_z = ApplicationMath.zFunction(ball_x,ball_y);
+	private float ball_velocity = 50f;
+	private float ball_drag = 0.5f;
+	private float ball_radius = 5f;
 	
 	/** Standard settings method for processing file. Also, initialize piScaler, because
 	 * it is based on the width and height of the window.*/
@@ -57,7 +62,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	/** Our setup method initializes textures, perspective tools, the surface,
 	 * partial derivatives, and the ball. */
 	public void setup() {
-		
+		frameRate(200);
 		textureMode(NORMAL);
 		
 		backgroundImage=loadImage("test.png");
@@ -75,18 +80,23 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		
 		maxZ = 0;
 		
+		createWorld();
+		
+		timeLastAnimated_ = millis();
+	}
+	
+	/** initializes and creates the surface */
+	private void createWorld() {
 		surface = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
 		partialXs = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
 		partialYs = new float[WORLD_WIDTH+1][WORLD_HEIGHT+1];
 		
 		surface = createSurface();
 		
-		//Initialize ball..currently this is hardcoded to place ball at 20,20
-		//which is currently the last point we calculate for our surface. It also attempts
-		//to use the normal vector at that point to place the ball exactly on the surface.
-		ball = new Ball(this,earthImage,ball_x,ball_y,
-				ApplicationMath.zFunction(ball_x,ball_y) * WORLD_Z_MAX/maxZ + 5f,5f, WORLD_Z_MAX/maxZ);
-//		System.out.println(ball_x + ", " + ball_y + ", " + ball_z);
+		// the actual z spawn location of the ball
+		float zSpawn = (ApplicationMath.zFunction(ball_x, ball_y)+ball_radius) * zScale;
+		
+		ball = new Ball(this,earthImage,ball_x,ball_y,zSpawn,ball_radius,ball_velocity,ball_drag,zScale);
 	}
 	
 	/** Creates the surface in pixel units and determines if the z values produced by the
@@ -104,16 +114,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.zFunction(j,i);
 			}
 		}
-		//scales all values down..without it, the surface would be huge for exponential functions
-		for (int i=WORLD_Y_MIN;i<=WORLD_Y_MAX;i++){			
-			for (int j=WORLD_X_MIN;j<=WORLD_X_MAX;j++){
-				surface[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] *= WORLD_Z_MAX/maxZ;
-				//also calculates partial derivatives and stores them
-				//as unit values
-				partialXs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.unitPartialX(j,i);
-				partialYs[j+WORLD_HEIGHT/2][i+WORLD_WIDTH/2] = ApplicationMath.unitPartialY(j,i);
-			}
-		}
+		zScale = WORLD_Z_MAX/maxZ;
 		
 		return surface;
 	}
@@ -121,56 +122,69 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	/** Our draw function first moves to the perspective that we are in and then moves
 	 * to world units to draw the surface, ball, and any helper drawings such as the normal
 	 * vectors, the world box, and any reference drawings. */
-	public void draw() {
-		//first we clear background
-		background(100);
-		//and we don't want to fill
-		noFill();
-		//reset stroke color and weight
-		stroke(0);
-		strokeWeight(1);
+	public void draw() {		
+		frame_++;
+
+		//	Draw all objects
+		if (frame_ % 5 == 0) {
+			//first we clear background
+			background(100);
+			//and we don't want to fill
+			noFill();
+			//reset stroke color and weight
+			stroke(0);
+			strokeWeight(1);
+			
+			//--------PERSPECTIVE--------//
+			perspective(fov, ((float)width)/((float)height), 
+			            cameraZ/10.0f, cameraZ*10.0f);
+			
+			//center and rotate to give perspective where Z points up, x and y slightly rotated
+			//creating depths on diagonals
+			translate(perspectiveX,perspectiveY);
+			
+			rotateX(PI/1.5f + xRotMod);
+			rotateZ(-PI/1.5f + zRotMod);
+			rotateY(-PI/4);	
+			//---------------------------//
+			
+			//--------WORLD--------//
+			pushMatrix();
+			
+			moveToWorldUnits();
+			
+			pushMatrix();
+			//------------------//
+			
+			//---------SURFACE------------//
+			pushMatrix();
+			
+			strokeWeight(.1f);
+			scale(1,1,zScale);
+			drawSurface();
+			
+			popMatrix();
+			//-----------------------//
+
+			//--------WORLD BOX & CENTER REFERENCES--------//
+			drawBoxRef();
+			//drawNormVectors();
+			drawRef();
+			//--------------------------------------//
+			popMatrix();
+			drawSpawnRef();
+			ball.draw();
+			
+			popMatrix();
+		}
+		int time = millis();
+		float dt = (time - timeLastAnimated_) * 0.001f;
 		
-		//--------PERSPECTIVE--------//
-		perspective(fov, ((float)width)/((float)height), 
-		            cameraZ/10.0f, cameraZ*10.0f);
+		timeLastAnimated_ = time;
 		
-		//center and rotate to give perspective where Z points up, x and y slightly rotated
-		//creating depths on diagonals
-		translate(perspectiveX,perspectiveY);
+		if (!paused)
+			ball.update(dt);
 		
-		rotateX(PI/1.5f + xRotMod);
-		rotateZ(-PI/1.5f + zRotMod);
-		rotateY(-PI/4);	
-		//---------------------------//
-		
-		//--------WORLD--------//
-		pushMatrix();
-		moveToWorldUnits();
-		pushMatrix();
-		//------------------//
-		
-		//---------SURFACE------------//
-		pushMatrix();
-		strokeWeight(.1f);
-		drawSurface();
-		drawNormVectors();
-		popMatrix();
-		//-----------------------//
-		
-		//--------WORLD BOX & CENTER REFERENCES--------//
-		drawBoxRef();
-		drawRef();
-		//--------------------------------------//
-		
-		popMatrix();
-		//gradient();
-//		ball.update();
-		noStroke();
-//		if(!paused)
-//			updateBall();
-		ball.update(0.05f);//dt);
-		ball.draw();
-		popMatrix();
 	}
 	/** Moves into world units by scaling by all the world to pixel values defined in
 	 * ApplicationConstants*/
@@ -181,9 +195,7 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 	
 	/** Draws the box of the world that we want our surface to fit within*/
 	private void drawBoxRef(){
-		//fill(0);
 		box(WORLD_HEIGHT,WORLD_WIDTH,WORLD_DEPTH);
-		//noFill();
 	}
 	
 	/** Draws the x,y,z axises */
@@ -198,6 +210,23 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 		//blue is z axis
 		stroke(0,0,255);
 		line(0,0,-2,0,0,6);
+	}
+	
+	private void drawSpawnRef() {
+//		draws reference axises
+		//red is x axis
+		pushMatrix();
+		translate(ball_x,ball_y,ApplicationMath.zFunction(ball_x, ball_y)*zScale);
+		stroke(255, 255, 0);
+		line(-2, 0, 6, 0);
+		//green is y axis
+		stroke(0, 255, 255);
+		line(0, -2, 0, 6);
+		//blue is z axis
+		stroke(255,0,255);
+		line(0,0,-2,0,0,6);
+		noStroke();
+		popMatrix();
 	}
 	
 	/** Draws the unit normal vector at all points in the surface */
@@ -250,32 +279,63 @@ public class SimulationMain extends PApplet implements ApplicationConstants
 			zRotMod = 0;
 			xRotMod = 0;
 			break;
-		case 'b':
-			ball.setCoords(ball_x, ball_y, ball_z);
+		case 'n':
+			createWorld();
+			break;
+		case '1':
+			ApplicationMath.changeEquation(1);
+			createWorld();
+			break;
+		case '2':
+			ApplicationMath.changeEquation(2);
+			createWorld();
+			break;
+		case '3':
+			ApplicationMath.changeEquation(3);
+			createWorld();
+			break;
+		case '.':
+			ball_velocity += 1.0f;
+			System.out.println(ball_velocity);
+			break;
+		case ',':
+			ball_velocity -= 1.0f;
+			System.out.println(ball_velocity);
+			break;
+		case 'k':
+			ball_drag -= 0.05f;
+			System.out.println(ball_drag);
+			break;
+		case 'l':
+			ball_drag += 0.05f;
+			System.out.println(ball_drag);
+			break;
+		case 'z':
+			ball_radius -= 0.2f;
+			System.out.println(ball_radius);
+			break;
+		case 'x':
+			ball_radius += 0.2f;
+			System.out.println(ball_radius);
 			break;
 		case ' ':
-			ball.update(0.5f);//dt);
 			paused = !paused;
 			break;
 		case '[':
-			//ball.rotate(0.2f);
 			ball_x += 1f;
 			System.out.println(ball_x);
 			break;
 		case ']':
 			ball_x -= 1f;
 			System.out.println(ball_x);
-			//ball.rotate(-0.2f);
 			break;
 		case '-':
-			//ball.rotate(0.2f);
 			ball_y += 1f;
 			System.out.println(ball_y);
 			break;
 		case '=':
 			ball_y -= 1f;
 			System.out.println(ball_y);
-			//ball.rotate(-0.2f);
 			break;
 		}
 	}

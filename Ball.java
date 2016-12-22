@@ -1,6 +1,7 @@
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PImage;
+import processing.core.PMatrix;
 import processing.core.PShape;
 
 /** Our Ball class is implemented by processing using triangle strips, which allows us to put
@@ -9,82 +10,113 @@ import processing.core.PShape;
 public class Ball extends ApplicationMath implements ApplicationConstants
 {
 	/** Define instance variables */
-	private float radius;
 	private float x,y,z;
+	private float vx, vy, ax, ay;
+	
+	private float drag = 0.3f;
+	
+	/** resistance vector <x,y> **/
+	private float resistanceX,
+					resistanceY;
+
+	/** gravity vector <x,y> **/
+	private float gravityX, 
+					gravityY;
+	
+	private double thetaX, thetaY, thetaZ;
+	
+	private double radius,diameter,circumference;
+	
 	private float zScale;
-	private float mass, inertia, 
-					vtx, vty, 		// translational velocities
-					atx, aty,		// translational accelerations
-					potential, kinetic;
-	private float angle_x, // angle along x,y axes (direction the ball is moving along the surface)
-					angle_y; // angle the ball is moving relative to z axis (rotation of the ball)
-	//Our ball is a PShape object
+	
 	private PShape ball;
+	private PApplet refApplet;
+	private PImage mySkin;
 	
-	/**
-	 * Reference to the parent papplet for drawing
-	 */
-	PApplet refApplet;
-	//PImage texture variable
-	PImage mySkin;
-	
-	Ball(PApplet inApplet,PImage in_skin,float x_, float y_, float z_, float radius_, float zScale_){
+	Ball(PApplet inApplet_,PImage in_skin,float x_, float y_, float z_, float radius_,
+			float initialVelocity_, float drag_, float zScale_){
+		
+		refApplet = inApplet_;
+		mySkin=in_skin;	
+		
 		x = x_;
 		y = y_;
 		z = z_;
+		
 		radius = radius_;
+		diameter = radius*2;
+		circumference = 2*Math.PI*radius;
+		
+		drag = drag_;
+		
+		vx = initialVelocity_*unitPartialX(x,y);
+		vy = initialVelocity_*unitPartialX(x,y);
+		
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);
+		
 		zScale = zScale_;
 		
-		mySkin=in_skin;
-		
-		refApplet = inApplet;
-		vtx = 1.2f*-unitPartialX(x,y);
-		vty = 1.2f*-unitPartialY(x,y);
-		mass = 5.0f;
-		inertia = (2/5f) * mass * (radius*radius);
-		ball = refApplet.createShape(PConstants.SPHERE, new float[]{radius});
+		ball = refApplet.createShape(PConstants.SPHERE, new float[]{(float) radius});
 		ball.setTexture(mySkin);
-	}
-	
-	public float getRadius() {
-		return radius;
+		
+		thetaX = 0;
+		thetaY = 0;
+		thetaZ = 0;
 	}
 	
 	/** Our update function is unfinished, but shows some of steps we have begun to take 
 	 * to model the state equation of the ball.*/
-	void update(float dt) {//float gradX, float gradY) {
+	void update(float dt){
+		float px = x, py = y, pz = z,pvx = vx, pvy = vy;
 
-		//System.out.println("dx,dy,dz: " + dx + ", " + dy + ", " + dz);
+		//First we need to update our x,y position based on our velocity
+		x += vx * dt;
+		y += vy * dt;
 		
-		float px = x, py = y, pz = z;
+		//Then we can map that to a z value on our surface
+		z = (float) (zScale*zFunction(x,y) + radius);
 		
-		x += vtx*dt;
-		y += vty*dt;
+		float dx = x-px, dy = y-py, dz = z-pz;
 		
-		vtx += atx*dt;
-		vty += aty*dt;
+		//Now we can update our acceleration
+		ax = -unitAccelerationX(x,y) * unitPartialX(x,y);// * dt; // * pvx;
+		ay = -unitAccelerationY(x,y) * unitPartialY(x,y);// * dt; // * pvy;	
 		
-		float dz = zScale* (zFunction(x,y) - zFunction(px,py));
+		// recalculate the resistance vector
+		resistanceX = (2/3f) * unitPartialX(x,y)*GRAVITY;
+		resistanceY = (2/3f) * unitPartialY(x,y)*GRAVITY;
 		
-		atx = (float) ((2/3f)*GRAVITY*-unitPartialX(px,py));
-		aty = (float) ((2/3f)*GRAVITY*-unitPartialY(px,py));
+		// recalculate the gravity vector
+		gravityX = -unitPartialX(x,y) * GRAVITY;
+		gravityY = -unitPartialY(x,y) * GRAVITY;
 		
-		z += dz;
+		//Next, let's update our velocity based on our acceleration
+		vx = ((pvx + (ax + gravityX - resistanceX)*dt) * (1-drag*dt));
+		vy = ((pvy + (ay + gravityY - resistanceY)*dt) * (1-drag*dt));
+		
+		//if the direction of our last velocity is same as our new velocity
+		if(Math.signum(pvy) == Math.signum(vy)){
+			//then we can continue rotation in this direction
+			thetaY -= Math.signum(pvy)*magnitude(dy,dz)/radius;
+		}else{
+			thetaY += Math.signum(vy)*magnitude(dy,dz)/radius; 
+		}
+		
+		if(Math.signum(pvx) == Math.signum(vx)){
+			//then we can continue rotation in this direction
+			thetaX -= Math.signum(pvx)*magnitude(dx,dz)/radius;
+		}else{
+			thetaX += Math.signum(vx)*magnitude(dx,dz)/radius; 
+		}	
+		
+	}
 
-		// friction 
-		vtx *= 0.98f;
-		vty *= 0.98f;
-		
+	/** Getter for ball radius */
+	public double getRadius() {
+		return radius;
 	}
-	/** Helper method for rotating the ball*/
-	void rotate(float amt) {
-//		angle_planar += amt;
-	}
-	/** Helper method that sets the z value of the ball. This will probably be helpful
-	 * for the reset method in SimulationMain*/
-	void setZ(float z_) {
-		z = z_;
-	}
+	
 	/** Getter method for getting the location of the ball */
 	float[] getCoords() {
 		return new float[]{x,y,z};
@@ -99,16 +131,28 @@ public class Ball extends ApplicationMath implements ApplicationConstants
 	/** Our draw function gets called in world units and draws the ball with its texture */
 	void draw(){
 		refApplet.pushMatrix();
-
+		
 		refApplet.translate(x,y,z);
-		refApplet.rotateX(angle_x);
-		refApplet.rotateY(angle_y);
-		//This noStroke has no effect..don't know why yet
-		refApplet.noStroke();
+		
+		refApplet.rotateX((float) thetaY);
+		refApplet.rotateY((float) thetaX);
+		
 		refApplet.shape(ball);
-		//reference line for ball's intended movement
-//		refApplet.line(0, 0, 0, 
-//				(float)(2000*Math.cos(angle_planar)), (float)(200*Math.sin(angle_planar)), 0);
+		
 		refApplet.popMatrix();
+	}
+	
+	/** Draws the x,y,z axises */
+	private void drawRef(){
+//		draws reference axises
+		//red is x axis
+		refApplet.stroke(255, 0, 0);
+		refApplet.line(-2, 0, 6, 0);
+		//green is y axis
+		refApplet.stroke(0, 255, 0);
+		refApplet.line(0, -2, 0, 6);
+		//blue is z axis
+		refApplet.stroke(0,0,255);
+		refApplet.line(0,0,-2,0,0,6);
 	}
 }

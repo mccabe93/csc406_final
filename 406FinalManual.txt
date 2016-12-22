@@ -1,0 +1,40 @@
+Group Members: Cameron Cole and Mike McCabe
+
+Running the program will draw the initial surface of the function F(x,y) = x^2 + y^2
+
+	Using numbers 1,2,3 on the keyboard will switch between 3 available functions for the surface
+		1. F(x,y) = x^2 + y^2
+		2. F(x,y) = (x^3 - 3x) + (y^3 - 3y)
+		3. F(x,y) = x + y
+
+It will also draw the normal vectors for each point in the surface and it will draw the textured ball at the top right of the surface.
+
+The ball is textured as an image of the earth that is wrapped around the sphere.
+
+Holding the left mouse button and moving the mouse will relatively translate the location of the perspective.
+
+Holding the right mouse button and moving the mouse will relatively rotate the perspective around the z axis for left and right movement
+	and around the x axis for up and down movement.
+
+NOTE that in our perspective we rotate the x,y,z such that the z is now pointing up and the x and y are rotated some to show an almost
+isometric view of the surface to start.
+
+The mouse wheel can be used to zoom in and out.
+
+Hitting space plays/pauses the animation.
+
+'n' resets the simulation.
+
+'.' increases the velocity of the ball
+',' decreases the velocity of the ball
+'k' decreases the drag of the ball
+'l' increases the drag of the ball
+'z' decreases the ball's radius
+'x' increases the ball's radius
+'[' increases the ball's x position
+']' decreases the ball's x position
+'-' increases the ball's y position
+'=' decreases the ball's y position
+
+Lastly, hitting  'r' resets the perspective to its default.
+

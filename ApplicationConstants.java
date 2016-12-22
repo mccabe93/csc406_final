@@ -9,11 +9,21 @@
  * 1 meter cubed area. Depending on the value for world width, height, and depth, the world will
  * be more or less detailed.
  * 
+ * WORLD_WIDTH = WORLD_HEIGHT = WORLD_DEPTH = 2 METERS
+ * VOLUME OF WORLD = 2 METERS CUBED
+ * 
+ * UNIT VELOCITY VECTOR = WORLD_Z_MAX/WORLD_Z_MAX  m/s
+ * UNIT ACCELERATION VECTOR = WORLD_Z_MAX/WORLD_Z_MAX  m/s^2
+ * 
  * @author Cameron
  *
  */
 public interface ApplicationConstants {
-
+	
+	//SURFACE_FRICTION IS 20 NEWTONS
+	float SURFACE_FRICTION = 20;
+	float GRAVITY = -9.8f;
+	
 	int WINDOW_WIDTH = 600, WINDOW_HEIGHT = 600,
 			WINDOW_DEPTH = (WINDOW_WIDTH + WINDOW_HEIGHT)/2;
 	
@@ -32,6 +42,4 @@ public interface ApplicationConstants {
 	float WORLD_TO_PIXEL_X = WINDOW_HEIGHT/WORLD_WIDTH;
 	float WORLD_TO_PIXEL_Y = WINDOW_WIDTH/WORLD_HEIGHT;
 	float WORLD_TO_PIXEL_Z = WINDOW_DEPTH/WORLD_DEPTH;
-	
-	float GRAVITY = 9.8f;
 }
